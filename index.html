@@ -666,8 +666,55 @@
             line-height: 1.5;
         }
 
-        /* Mobile Responsive for Chatbot */
-        @media (max-width: 450px) {
+        /* Footer */
+        .footer {
+            background: #2c3e50;
+            color: white;
+            text-align: center;
+            padding: 30px 0;
+            margin-top: 0;
+        }
+
+        .footer p {
+            margin: 0;
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        .footer a {
+            color: #3498db;
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.3s ease;
+        }
+
+        .footer a:hover {
+            color: #5dade2;
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+
+            .hero p {
+                font-size: 1.1rem;
+            }
+
+            .nav-links {
+                display: none;
+            }
+
+            .services-grid {
+                grid-template-columns: 1fr;
+                gap: 30px;
+            }
+
+            .form-container {
+                padding: 30px 20px;
+            }
+
             .chat-window {
                 width: 95vw;
                 height: 85vh;
@@ -703,60 +750,6 @@
         .chat-messages::-webkit-scrollbar-thumb {
             background: #667eea;
             border-radius: 2px;
-        }
-
-        /* Footer */
-        .footer {
-            background: #2c3e50;
-            color: white;
-            text-align: center;
-            padding: 30px 0;
-            margin-top: 0;
-        }
-
-        .footer p {
-            margin: 0;
-            font-size: 0.9rem;
-            opacity: 0.8;
-        }
-
-        .footer a {
-            color: #3498db;
-            text-decoration: none;
-            font-weight: 600;
-            transition: color 0.3s ease;
-        }
-
-        .footer a:hover {
-            color: #5dade2;
-        }
-        @media (max-width: 768px) {
-            .hero h1 {
-                font-size: 2.5rem;
-            }
-
-            .hero p {
-                font-size: 1.1rem;
-            }
-
-            .nav-links {
-                display: none;
-            }
-
-            .services-grid {
-                grid-template-columns: 1fr;
-                gap: 30px;
-            }
-
-            .form-container {
-                padding: 30px 20px;
-            }
-
-            .chatbot-toggle {
-                width: 50px;
-                height: 50px;
-                font-size: 1.2rem;
-            }
         }
 
         /* Smooth scrolling */
@@ -977,7 +970,7 @@
                     fecha: formData.fecha
                 });
                 
-                // Send to Google Sheets (placeholder - replace with your integration)
+                // Send to Google Sheets
                 await sendToSheets(formData);
                 
                 // Show success message
@@ -1010,7 +1003,7 @@
 
         // Google Sheets integration
         async function sendToSheets(formData) {
-            const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxULN5f6-dSAMfdJaBz3-HjGrJGKUyDiVOzyzDAGTQuo7VR89x5XgnFLcqA1-AMo8Ay0A/exec'; // Reemplaza con tu URL real de Google Apps Script
+            const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxULN5f6-dSAMfdJaBz3-HjGrJGKUyDiVOzyzDAGTQuo7VR89x5XgnFLcqA1-AMo8Ay0A/exec';
             
             // Mapear datos del formulario al formato esperado por tu script
             const sheetData = {
@@ -1074,453 +1067,491 @@
             return serviceMap[servicioCode] || 'No especificado';
         }
 
-        // Chatbot functionality
-        let chatCurrentStep = 0;
-        let chatUserData = {};
-        let chatIsOpen = false;
+        // Wait for DOM to be fully loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            // Chatbot functionality
+            let chatCurrentStep = 0;
+            let chatUserData = {};
+            let chatIsOpen = false;
 
-        // DOM Elements for chatbot
-        const chatToggle = document.getElementById('chatToggle');
-        const chatWindow = document.getElementById('chatWindow');
-        const chatMessages = document.getElementById('chatMessages');
-        const chatInputContainer = document.getElementById('chatInputContainer');
-        const chatInput = document.getElementById('chatInput');
-        const notificationBadge = document.getElementById('notificationBadge');
+            // DOM Elements for chatbot
+            const chatToggle = document.getElementById('chatToggle');
+            const chatWindow = document.getElementById('chatWindow');
+            const chatMessages = document.getElementById('chatMessages');
+            const chatInputContainer = document.getElementById('chatInputContainer');
+            const chatInput = document.getElementById('chatInput');
+            const notificationBadge = document.getElementById('notificationBadge');
 
-        // Chat Flow Steps
-        const chatSteps = [
-            {
-                id: 'welcome',
-                type: 'bot_message',
-                message: '¡Hola! 👋 Soy el asistente de CZ Marketing. Te ayudo a conectar con el mejor servicio de marketing digital.',
-                delay: 1000
-            },
-            {
-                id: 'intro',
-                type: 'bot_message', 
-                message: 'Vamos a conocerte mejor para ofrecerte exactamente lo que necesitas. ¿Cuál es tu nombre?',
-                delay: 1500
-            },
-            {
-                id: 'name',
-                type: 'user_input',
-                field: 'nombre',
-                validation: 'text'
-            },
-            {
-                id: 'email_request',
-                type: 'bot_message_dynamic',
-                message: (userData) => `Perfecto, ${userData.nombre}! 😊 ¿Cuál es tu email para enviarte información personalizada?`,
-                delay: 800
-            },
-            {
-                id: 'email',
-                type: 'user_input',
-                field: 'email',
-                validation: 'email'
-            },
-            {
-                id: 'phone_request',
-                type: 'bot_message',
-                message: '📱 ¿Podrías compartir tu número de teléfono? (Opcional)',
-                delay: 800
-            },
-            {
-                id: 'phone',
-                type: 'user_input',
-                field: 'telefono',
-                validation: 'optional',
-                optional: true
-            },
-            {
-                id: 'business_request',
-                type: 'bot_message',
-                message: '🏢 ¿Cómo se llama tu empresa o negocio?',
-                delay: 800
-            },
-            {
-                id: 'business',
-                type: 'user_input',
-                field: 'negocio',
-                validation: 'text'
-            },
-            {
-                id: 'service_request',
-                type: 'bot_message',
-                message: '🎯 ¿Qué servicio te interesa más?',
-                delay: 800
-            },
-            {
-                id: 'service',
-                type: 'options',
-                field: 'servicio',
-                options: [
-                    { value: 'redes-sociales', label: '📱 Manejo de Redes Sociales' },
-                    { value: 'diseno-logo', label: '🎨 Diseño de Logo' },
-                    { value: 'branding', label: '🚀 Branding Integral' },
-                    { value: 'multiple', label: '✨ Múltiples Servicios' },
-                    { value: 'consulta', label: '💬 Consulta General' }
-                ]
-            },
-            {
-                id: 'budget_request',
-                type: 'bot_message',
-                message: '💰 ¿Cuál es tu presupuesto aproximado para este proyecto?',
-                delay: 800
-            },
-            {
-                id: 'budget',
-                type: 'options',
-                field: 'presupuesto',
-                options: [
-                    { value: 'hasta-50k', label: 'Hasta $50.000' },
-                    { value: '50k-100k', label: '$50.000 - $100.000' },
-                    { value: '100k-200k', label: '$100.000 - $200.000' },
-                    { value: '200k-500k', label: '$200.000 - $500.000' },
-                    { value: 'mas-500k', label: 'Más de $500.000' },
-                    { value: 'a-consultar', label: 'A consultar' }
-                ]
-            },
-            {
-                id: 'message_request',
-                type: 'bot_message_dynamic',
-                message: (userData) => `Excelente, ${userData.nombre}! 📝 ¿Hay algo específico que te gustaría contarnos sobre tu proyecto o consulta?`,
-                delay: 800
-            },
-            {
-                id: 'message',
-                type: 'user_input',
-                field: 'mensaje',
-                validation: 'text',
-                placeholder: 'Cuéntanos más sobre tu proyecto...'
-            },
-            {
-                id: 'processing',
-                type: 'bot_message',
-                message: '⏳ Perfecto! Estoy procesando tu información y enviándola al equipo...',
-                delay: 800
-            },
-            {
-                id: 'success',
-                type: 'success',
-                delay: 2000
-            }
-        ];
-
-        // Event Listeners for chatbot
-        chatToggle.addEventListener('click', toggleChat);
-        chatInput.addEventListener('keypress', handleChatInputKeypress);
-
-        // Initialize Chat
-        function initChat() {
-            setTimeout(() => {
-                executeChatStep(0);
-            }, 500);
-        }
-
-        // Toggle Chat
-        function toggleChat() {
-            chatIsOpen = !chatIsOpen;
-            chatWindow.classList.toggle('active');
-            chatToggle.classList.toggle('active');
-            
-            if (chatIsOpen && chatCurrentStep === 0) {
-                notificationBadge.style.display = 'none';
-                initChat();
-            }
-            
-            // Update toggle icon
-            const toggleIcon = chatToggle.querySelector('.chat-toggle-icon');
-            toggleIcon.textContent = chatIsOpen ? '✕' : '💬';
-        }
-
-        // Execute Chat Step
-        function executeChatStep(stepIndex) {
-            if (stepIndex >= chatSteps.length) return;
-            
-            const step = chatSteps[stepIndex];
-            chatCurrentStep = stepIndex;
-            
-            setTimeout(() => {
-                switch (step.type) {
-                    case 'bot_message':
-                        addChatBotMessage(step.message);
-                        executeChatStep(stepIndex + 1);
-                        break;
-                        
-                    case 'bot_message_dynamic':
-                        addChatBotMessage(step.message(chatUserData));
-                        executeChatStep(stepIndex + 1);
-                        break;
-                        
-                    case 'user_input':
-                        setupChatUserInput(step);
-                        break;
-                        
-                    case 'options':
-                        showChatOptions(step);
-                        break;
-                        
-                    case 'success':
-                        showChatSuccessMessage();
-                        break;
+            // Chat Flow Steps
+            const chatSteps = [
+                {
+                    id: 'welcome',
+                    type: 'bot_message',
+                    message: '¡Hola! 👋 Soy el asistente de CZ Marketing. Te ayudo a conectar con el mejor servicio de marketing digital.',
+                    delay: 1000
+                },
+                {
+                    id: 'intro',
+                    type: 'bot_message', 
+                    message: 'Vamos a conocerte mejor para ofrecerte exactamente lo que necesitas. ¿Cuál es tu nombre?',
+                    delay: 1500
+                },
+                {
+                    id: 'name',
+                    type: 'user_input',
+                    field: 'nombre',
+                    validation: 'text'
+                },
+                {
+                    id: 'email_request',
+                    type: 'bot_message_dynamic',
+                    message: (userData) => `Perfecto, ${userData.nombre}! 😊 ¿Cuál es tu email para enviarte información personalizada?`,
+                    delay: 800
+                },
+                {
+                    id: 'email',
+                    type: 'user_input',
+                    field: 'email',
+                    validation: 'email'
+                },
+                {
+                    id: 'phone_request',
+                    type: 'bot_message',
+                    message: '📱 ¿Podrías compartir tu número de teléfono? (Opcional)',
+                    delay: 800
+                },
+                {
+                    id: 'phone',
+                    type: 'user_input',
+                    field: 'telefono',
+                    validation: 'optional',
+                    optional: true
+                },
+                {
+                    id: 'business_request',
+                    type: 'bot_message',
+                    message: '🏢 ¿Cómo se llama tu empresa o negocio?',
+                    delay: 800
+                },
+                {
+                    id: 'business',
+                    type: 'user_input',
+                    field: 'negocio',
+                    validation: 'text'
+                },
+                {
+                    id: 'service_request',
+                    type: 'bot_message',
+                    message: '🎯 ¿Qué servicio te interesa más?',
+                    delay: 800
+                },
+                {
+                    id: 'service',
+                    type: 'options',
+                    field: 'servicio',
+                    options: [
+                        { value: 'redes-sociales', label: '📱 Manejo de Redes Sociales' },
+                        { value: 'diseno-logo', label: '🎨 Diseño de Logo' },
+                        { value: 'branding', label: '🚀 Branding Integral' },
+                        { value: 'multiple', label: '✨ Múltiples Servicios' },
+                        { value: 'consulta', label: '💬 Consulta General' }
+                    ]
+                },
+                {
+                    id: 'budget_request',
+                    type: 'bot_message',
+                    message: '💰 ¿Cuál es tu presupuesto aproximado para este proyecto?',
+                    delay: 800
+                },
+                {
+                    id: 'budget',
+                    type: 'options',
+                    field: 'presupuesto',
+                    options: [
+                        { value: 'hasta-50k', label: 'Hasta $50.000' },
+                        { value: '50k-100k', label: '$50.000 - $100.000' },
+                        { value: '100k-200k', label: '$100.000 - $200.000' },
+                        { value: '200k-500k', label: '$200.000 - $500.000' },
+                        { value: 'mas-500k', label: 'Más de $500.000' },
+                        { value: 'a-consultar', label: 'A consultar' }
+                    ]
+                },
+                {
+                    id: 'message_request',
+                    type: 'bot_message_dynamic',
+                    message: (userData) => `Excelente, ${userData.nombre}! 📝 ¿Hay algo específico que te gustaría contarnos sobre tu proyecto o consulta?`,
+                    delay: 800
+                },
+                {
+                    id: 'message',
+                    type: 'user_input',
+                    field: 'mensaje',
+                    validation: 'text',
+                    placeholder: 'Cuéntanos más sobre tu proyecto...'
+                },
+                {
+                    id: 'processing',
+                    type: 'bot_message',
+                    message: '⏳ Perfecto! Estoy procesando tu información y enviándola al equipo...',
+                    delay: 800
+                },
+                {
+                    id: 'success',
+                    type: 'success',
+                    delay: 2000
                 }
-            }, step.delay || 0);
-        }
+            ];
 
-        // Add Bot Message
-        function addChatBotMessage(text) {
-            showChatTypingIndicator();
+            // Event Listeners for chatbot
+            if (chatToggle) {
+                chatToggle.addEventListener('click', toggleChat);
+            }
             
-            setTimeout(() => {
-                hideChatTypingIndicator();
+            if (chatInput) {
+                chatInput.addEventListener('keypress', handleChatInputKeypress);
+            }
+
+            // Initialize Chat
+            function initChat() {
+                setTimeout(() => {
+                    executeChatStep(0);
+                }, 500);
+            }
+
+            // Toggle Chat
+            function toggleChat() {
+                console.log('Toggle chat clicked!');
+                chatIsOpen = !chatIsOpen;
                 
+                if (chatWindow) {
+                    chatWindow.classList.toggle('active');
+                }
+                
+                if (chatToggle) {
+                    chatToggle.classList.toggle('active');
+                }
+                
+                if (chatIsOpen && chatCurrentStep === 0) {
+                    if (notificationBadge) {
+                        notificationBadge.style.display = 'none';
+                    }
+                    initChat();
+                }
+                
+                // Update toggle icon
+                const toggleIcon = chatToggle.querySelector('.chat-toggle-icon');
+                if (toggleIcon) {
+                    toggleIcon.textContent = chatIsOpen ? '✕' : '💬';
+                }
+            }
+
+            // Execute Chat Step
+            function executeChatStep(stepIndex) {
+                if (stepIndex >= chatSteps.length) return;
+                
+                const step = chatSteps[stepIndex];
+                chatCurrentStep = stepIndex;
+                
+                setTimeout(() => {
+                    switch (step.type) {
+                        case 'bot_message':
+                            addChatBotMessage(step.message);
+                            executeChatStep(stepIndex + 1);
+                            break;
+                            
+                        case 'bot_message_dynamic':
+                            addChatBotMessage(step.message(chatUserData));
+                            executeChatStep(stepIndex + 1);
+                            break;
+                            
+                        case 'user_input':
+                            setupChatUserInput(step);
+                            break;
+                            
+                        case 'options':
+                            showChatOptions(step);
+                            break;
+                            
+                        case 'success':
+                            showChatSuccessMessage();
+                            break;
+                    }
+                }, step.delay || 0);
+            }
+
+            // Add Bot Message
+            function addChatBotMessage(text) {
+                showChatTypingIndicator();
+                
+                setTimeout(() => {
+                    hideChatTypingIndicator();
+                    
+                    const messageDiv = document.createElement('div');
+                    messageDiv.className = 'chat-message bot';
+                    messageDiv.innerHTML = `
+                        <div class="message-avatar">🤖</div>
+                        <div class="message-content">${text}</div>
+                    `;
+                    
+                    if (chatMessages) {
+                        chatMessages.appendChild(messageDiv);
+                        scrollChatToBottom();
+                    }
+                }, 1200);
+            }
+
+            // Add User Message
+            function addChatUserMessage(text) {
                 const messageDiv = document.createElement('div');
-                messageDiv.className = 'chat-message bot';
+                messageDiv.className = 'chat-message user';
                 messageDiv.innerHTML = `
-                    <div class="message-avatar">🤖</div>
                     <div class="message-content">${text}</div>
                 `;
                 
-                chatMessages.appendChild(messageDiv);
-                scrollChatToBottom();
-            }, 1200);
-        }
-
-        // Add User Message
-        function addChatUserMessage(text) {
-            const messageDiv = document.createElement('div');
-            messageDiv.className = 'chat-message user';
-            messageDiv.innerHTML = `
-                <div class="message-content">${text}</div>
-            `;
-            
-            chatMessages.appendChild(messageDiv);
-            scrollChatToBottom();
-        }
-
-        // Setup User Input
-        function setupChatUserInput(step) {
-            chatInputContainer.style.display = 'block';
-            chatInput.focus();
-            chatInput.placeholder = step.placeholder || 'Escribe tu respuesta...';
-            
-            chatInput.onkeypress = (e) => {
-                if (e.key === 'Enter') {
-                    handleChatUserInput(step);
+                if (chatMessages) {
+                    chatMessages.appendChild(messageDiv);
+                    scrollChatToBottom();
                 }
-            };
-        }
-
-        // Handle User Input
-        function handleChatUserInput(step) {
-            const value = chatInput.value.trim();
-            
-            if (!value && !step.optional) {
-                chatInput.style.borderColor = '#ff6b6b';
-                setTimeout(() => {
-                    chatInput.style.borderColor = '#e2e8f0';
-                }, 2000);
-                return;
             }
-            
-            // Validate input
-            if (!validateChatInput(value, step.validation) && !step.optional) {
-                chatInput.style.borderColor = '#ff6b6b';
-                addChatBotMessage('❌ Por favor, ingresa un formato válido.');
-                setTimeout(() => {
-                    chatInput.style.borderColor = '#e2e8f0';
-                }, 2000);
-                return;
-            }
-            
-            // Save data
-            chatUserData[step.field] = value || 'No especificado';
-            
-            // Show user message
-            addChatUserMessage(value || 'Prefiero no especificar');
-            
-            // Clear input and hide container
-            chatInput.value = '';
-            chatInputContainer.style.display = 'none';
-            
-            // Continue to next step
-            executeChatStep(chatCurrentStep + 1);
-        }
 
-        // Show Options
-        function showChatOptions(step) {
-            const optionsDiv = document.createElement('div');
-            optionsDiv.className = 'chat-message bot';
-            
-            let optionsHTML = `
-                <div class="message-avatar">🤖</div>
-                <div class="message-content">
-                    <div class="chat-options">
-            `;
-            
-            step.options.forEach(option => {
+            // Setup User Input
+            function setupChatUserInput(step) {
+                if (chatInputContainer) {
+                    chatInputContainer.style.display = 'block';
+                }
+                if (chatInput) {
+                    chatInput.focus();
+                    chatInput.placeholder = step.placeholder || 'Escribe tu respuesta...';
+                    
+                    chatInput.onkeypress = (e) => {
+                        if (e.key === 'Enter') {
+                            handleChatUserInput(step);
+                        }
+                    };
+                }
+            }
+
+            // Handle User Input
+            function handleChatUserInput(step) {
+                if (!chatInput) return;
+                
+                const value = chatInput.value.trim();
+                
+                if (!value && !step.optional) {
+                    chatInput.style.borderColor = '#ff6b6b';
+                    setTimeout(() => {
+                        chatInput.style.borderColor = '#e2e8f0';
+                    }, 2000);
+                    return;
+                }
+                
+                // Validate input
+                if (!validateChatInput(value, step.validation) && !step.optional) {
+                    chatInput.style.borderColor = '#ff6b6b';
+                    addChatBotMessage('❌ Por favor, ingresa un formato válido.');
+                    setTimeout(() => {
+                        chatInput.style.borderColor = '#e2e8f0';
+                    }, 2000);
+                    return;
+                }
+                
+                // Save data
+                chatUserData[step.field] = value || 'No especificado';
+                
+                // Show user message
+                addChatUserMessage(value || 'Prefiero no especificar');
+                
+                // Clear input and hide container
+                chatInput.value = '';
+                if (chatInputContainer) {
+                    chatInputContainer.style.display = 'none';
+                }
+                
+                // Continue to next step
+                executeChatStep(chatCurrentStep + 1);
+            }
+
+            // Show Options
+            function showChatOptions(step) {
+                const optionsDiv = document.createElement('div');
+                optionsDiv.className = 'chat-message bot';
+                
+                let optionsHTML = `
+                    <div class="message-avatar">🤖</div>
+                    <div class="message-content">
+                        <div class="chat-options">
+                `;
+                
+                step.options.forEach((option, index) => {
+                    optionsHTML += `
+                        <button class="chat-option-btn" onclick="window.selectChatOption('${option.value}', '${option.label.replace(/'/g, "\\'")}', '${step.field}')">
+                            ${option.label}
+                        </button>
+                    `;
+                });
+                
                 optionsHTML += `
-                    <button class="chat-option-btn" onclick="selectChatOption('${option.value}', '${option.label}', '${step.field}')">
-                        ${option.label}
-                    </button>
-                `;
-            });
-            
-            optionsHTML += `
+                        </div>
                     </div>
-                </div>
-            `;
-            
-            optionsDiv.innerHTML = optionsHTML;
-            chatMessages.appendChild(optionsDiv);
-            scrollChatToBottom();
-        }
-
-        // Select Option
-        function selectChatOption(value, label, field) {
-            chatUserData[field] = value;
-            addChatUserMessage(label);
-            
-            // Remove options
-            const lastMessage = chatMessages.lastElementChild;
-            if (lastMessage.querySelector('.chat-options')) {
-                lastMessage.remove();
-            }
-            
-            executeChatStep(chatCurrentStep + 1);
-        }
-
-        // Show Success Message
-        async function showChatSuccessMessage() {
-            try {
-                // Send to CRM
-                await sendChatToCRM();
-                
-                const successDiv = document.createElement('div');
-                successDiv.className = 'chat-success';
-                successDiv.innerHTML = `
-                    <div class="success-icon">✅</div>
-                    <h3>¡Perfecto!</h3>
-                    <p>Tu información ha sido enviada correctamente. El equipo de CZ Marketing te contactará muy pronto.<br><br>¡Gracias por confiar en nosotros! 🚀</p>
                 `;
                 
-                chatMessages.innerHTML = '';
-                chatMessages.appendChild(successDiv);
-                
-            } catch (error) {
-                console.error('Error:', error);
-                addChatBotMessage('❌ Hubo un error al enviar tu información. Por favor, inténtalo de nuevo o contáctanos directamente.');
-            }
-        }
-
-        // Send to CRM
-        async function sendChatToCRM() {
-            // Prepare data for EmailJS
-            const emailData = {
-                to_name: 'CZ Marketing Team',
-                from_name: chatUserData.nombre,
-                from_email: chatUserData.email,
-                telefono: chatUserData.telefono,
-                empresa: chatUserData.negocio,
-                servicio_label: getServiceLabel(chatUserData.servicio),
-                presupuesto_label: getBudgetLabel(chatUserData.presupuesto),
-                mensaje: chatUserData.mensaje,
-                fecha: new Date().toLocaleString('es-ES')
-            };
-            
-            // Send email
-            await emailjs.send('service_kahf2ie', 'marketing_cliente_celeste', emailData);
-            
-            // Prepare data for Google Sheets
-            const sheetData = {
-                variables: chatUserData
-            };
-            
-            // Send to Google Sheets using the same function
-            const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/TU_URL_GOOGLE_SCRIPT_AQUI/exec';
-            
-            const response = await fetch(GOOGLE_SCRIPT_URL, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(sheetData)
-            });
-            
-            if (!response.ok) {
-                throw new Error('Error al enviar a Google Sheets');
-            }
-            
-            return response.json();
-        }
-
-        // Utility Functions for chatbot
-        function validateChatInput(value, type) {
-            switch (type) {
-                case 'email':
-                    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
-                case 'text':
-                    return value.length >= 2;
-                case 'optional':
-                    return true;
-                default:
-                    return true;
-            }
-        }
-
-        function showChatTypingIndicator() {
-            const typingDiv = document.createElement('div');
-            typingDiv.className = 'chat-message bot typing-indicator';
-            typingDiv.innerHTML = `
-                <div class="message-avatar">🤖</div>
-                <div class="message-content">
-                    <div class="typing-dots">
-                        <div class="typing-dot"></div>
-                        <div class="typing-dot"></div>
-                        <div class="typing-dot"></div>
-                    </div>
-                </div>
-            `;
-            
-            chatMessages.appendChild(typingDiv);
-            scrollChatToBottom();
-        }
-
-        function hideChatTypingIndicator() {
-            const typingIndicator = chatMessages.querySelector('.typing-indicator');
-            if (typingIndicator) {
-                typingIndicator.remove();
-            }
-        }
-
-        function handleChatInputKeypress(e) {
-            if (e.key === 'Enter') {
-                const currentStepData = chatSteps[chatCurrentStep];
-                if (currentStepData && currentStepData.type === 'user_input') {
-                    handleChatUserInput(currentStepData);
+                optionsDiv.innerHTML = optionsHTML;
+                if (chatMessages) {
+                    chatMessages.appendChild(optionsDiv);
+                    scrollChatToBottom();
                 }
             }
-        }
 
-        function scrollChatToBottom() {
-            setTimeout(() => {
-                chatMessages.scrollTop = chatMessages.scrollHeight;
-            }, 100);
-        }
+            // Make selectChatOption available globally
+            window.selectChatOption = function(value, label, field) {
+                chatUserData[field] = value;
+                addChatUserMessage(label);
+                
+                // Remove options
+                if (chatMessages) {
+                    const lastMessage = chatMessages.lastElementChild;
+                    if (lastMessage && lastMessage.querySelector('.chat-options')) {
+                        lastMessage.remove();
+                    }
+                }
+                
+                executeChatStep(chatCurrentStep + 1);
+            };
 
-        // Show notification badge initially
-        setTimeout(() => {
-            if (notificationBadge) {
-                notificationBadge.style.display = 'flex';
+            // Show Success Message
+            async function showChatSuccessMessage() {
+                try {
+                    // Send to CRM
+                    await sendChatToCRM();
+                    
+                    const successDiv = document.createElement('div');
+                    successDiv.className = 'chat-success';
+                    successDiv.innerHTML = `
+                        <div class="success-icon">✅</div>
+                        <h3>¡Perfecto!</h3>
+                        <p>Tu información ha sido enviada correctamente. El equipo de CZ Marketing te contactará muy pronto.<br><br>¡Gracias por confiar en nosotros! 🚀</p>
+                    `;
+                    
+                    if (chatMessages) {
+                        chatMessages.innerHTML = '';
+                        chatMessages.appendChild(successDiv);
+                    }
+                    
+                } catch (error) {
+                    console.error('Error:', error);
+                    addChatBotMessage('❌ Hubo un error al enviar tu información. Por favor, inténtalo de nuevo o contáctanos directamente.');
+                }
             }
-        }, 3000);
 
-        // Chatbot integration placeholder function (removed old one)
-        function toggleChatbot() {
-            // This function is now handled by toggleChat()
-            toggleChat();
-        }
+            // Send to CRM
+            async function sendChatToCRM() {
+                // Prepare data for EmailJS
+                const emailData = {
+                    to_name: 'CZ Marketing Team',
+                    from_name: chatUserData.nombre,
+                    from_email: chatUserData.email,
+                    telefono: chatUserData.telefono,
+                    empresa: chatUserData.negocio,
+                    servicio_label: getServiceLabel(chatUserData.servicio),
+                    presupuesto_label: getBudgetLabel(chatUserData.presupuesto),
+                    mensaje: chatUserData.mensaje,
+                    fecha: new Date().toLocaleString('es-ES')
+                };
+                
+                // Send email
+                await emailjs.send('service_kahf2ie', 'marketing_cliente_celeste', emailData);
+                
+                // Prepare data for Google Sheets
+                const sheetData = {
+                    variables: chatUserData
+                };
+                
+                // Send to Google Sheets
+                const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxULN5f6-dSAMfdJaBz3-HjGrJGKUyDiVOzyzDAGTQuo7VR89x5XgnFLcqA1-AMo8Ay0A/exec';
+                
+                const response = await fetch(GOOGLE_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(sheetData)
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Error al enviar a Google Sheets');
+                }
+                
+                return response.json();
+            }
+
+            // Utility Functions for chatbot
+            function validateChatInput(value, type) {
+                switch (type) {
+                    case 'email':
+                        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+                    case 'text':
+                        return value.length >= 2;
+                    case 'optional':
+                        return true;
+                    default:
+                        return true;
+                }
+            }
+
+            function showChatTypingIndicator() {
+                const typingDiv = document.createElement('div');
+                typingDiv.className = 'chat-message bot typing-indicator';
+                typingDiv.innerHTML = `
+                    <div class="message-avatar">🤖</div>
+                    <div class="message-content">
+                        <div class="typing-dots">
+                            <div class="typing-dot"></div>
+                            <div class="typing-dot"></div>
+                            <div class="typing-dot"></div>
+                        </div>
+                    </div>
+                `;
+                
+                if (chatMessages) {
+                    chatMessages.appendChild(typingDiv);
+                    scrollChatToBottom();
+                }
+            }
+
+            function hideChatTypingIndicator() {
+                if (chatMessages) {
+                    const typingIndicator = chatMessages.querySelector('.typing-indicator');
+                    if (typingIndicator) {
+                        typingIndicator.remove();
+                    }
+                }
+            }
+
+            function handleChatInputKeypress(e) {
+                if (e.key === 'Enter') {
+                    const currentStepData = chatSteps[chatCurrentStep];
+                    if (currentStepData && currentStepData.type === 'user_input') {
+                        handleChatUserInput(currentStepData);
+                    }
+                }
+            }
+
+            function scrollChatToBottom() {
+                setTimeout(() => {
+                    if (chatMessages) {
+                        chatMessages.scrollTop = chatMessages.scrollHeight;
+                    }
+                }, 100);
+            }
+
+            // Show notification badge initially
+            setTimeout(() => {
+                if (notificationBadge) {
+                    notificationBadge.style.display = 'flex';
+                }
+            }, 3000);
+
+        }); // End of DOMContentLoaded
 
         // Smooth scroll for navigation links
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
