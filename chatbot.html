@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CZ Marketing Chatbot</title>
+    
+    <!-- EmailJS SDK -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/emailjs/3.11.0/email.min.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: rgba(0, 0, 0, 0.5);
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Chatbot Container */
+        .chatbot-container {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 10000;
+        }
+
+        /* Floating Button */
+        .chat-toggle {
+            width: 65px;
+            height: 65px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.6rem;
+            cursor: pointer;
+            box-shadow: 0 8px 30px rgba(102, 126, 234, 0.4);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: none;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .chat-toggle::before {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .chat-toggle:hover::before {
+            opacity: 1;
+        }
+
+        .chat-toggle:hover {
+            transform: scale(1.1);
+            box-shadow: 0 12px 40px rgba(102, 126, 234, 0.6);
+        }
+
+        .chat-toggle span {
+            position: relative;
+            z-index: 1;
+        }
+
+        .chat-toggle.active span {
+            transform: rotate(45deg);
+        }
+
+        /* Notification Badge */
+        .notification-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            width: 20px;
+            height: 20px;
+            background: #ff6b6b;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            color: white;
+            font-weight: bold;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+
+        /* Chat Window */
+        .chat-window {
+            position: absolute;
+            bottom: 80px;
+            right: 0;
+            width: 380px;
+            height: 550px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            transform: scale(0) translateY(20px);
+            transform-origin: bottom right;
+            transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            opacity: 0;
+            overflow: hidden;
+        }
+
+        .chat-window.active {
+            transform: scale(1) translateY(0);
+            opacity: 1;
+        }
+
+        /* Chat Header */
+        .chat-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .avatar {
+            width: 45px;
+            height: 45px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+
+        .header-info h3 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+
+        .header-info p {
+            font-size: 0.85rem;
+            opacity: 0.9;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: #4ade80;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 5px;
+            animation: blink 2s infinite;
+        }
+
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0.3; }
+        }
+
+        /* Chat Body */
+        .chat-body {
+            height: calc(100% - 85px);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .messages-container {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            max-height: 400px;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            animation: fadeInUp 0.5s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.bot {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .message.user {
+            text-align: right;
+        }
+
+        .message-avatar {
+            width: 35px;
+            height: 35px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 0.9rem;
+            flex-shrink: 0;
+        }
+
+        .message-content {
+            background: #f8faff;
+            padding: 12px 16px;
+            border-radius: 18px;
+            max-width: 75%;
+            font-size: 0.95rem;
+            line-height: 1.4;
+            color: #333;
+            border: 1px solid #e2e8f0;
+        }
+
+        .message.user .message-content {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            margin-left: auto;
+            border: none;
+        }
+
+        /* Input Container */
+        .input-container {
+            padding: 15px 20px;
+            border-top: 1px solid #e2e8f0;
+            background: #f8faff;
+        }
+
+        .chat-input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #e2e8f0;
+            border-radius: 25px;
+            font-size: 0.95rem;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .chat-input:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        /* Options Buttons */
+        .options-container {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .option-btn {
+            background: white;
+            border: 2px solid #667eea;
+            color: #667eea;
+            padding: 12px 16px;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+            font-weight: 500;
+            text-align: left;
+        }
+
+        .option-btn:hover {
+            background: #667eea;
+            color: white;
+            transform: translateX(5px);
+        }
+
+        /* Form Elements */
+        .form-group {
+            margin: 10px 0;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 10px 15px;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .form-input:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+        }
+
+        .submit-btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Loading Animation */
+        .typing-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 15px;
+        }
+
+        .typing-dots {
+            display: flex;
+            gap: 4px;
+        }
+
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            background: #667eea;
+            border-radius: 50%;
+            animation: typing 1.4s infinite ease-in-out;
+        }
+
+        .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+        .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+
+        @keyframes typing {
+            0%, 80%, 100% { transform: scale(0.8); opacity: 0.5; }
+            40% { transform: scale(1); opacity: 1; }
+        }
+
+        /* Success Message */
+        .success-message {
+            text-align: center;
+            padding: 30px 20px;
+        }
+
+        .success-icon {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #10b981, #059669);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            font-size: 1.5rem;
+            color: white;
+        }
+
+        .success-message h3 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 1.2rem;
+        }
+
+        .success-message p {
+            color: #666;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 450px) {
+            .chat-window {
+                width: 95vw;
+                height: 85vh;
+                bottom: 20px;
+                right: 50%;
+                transform: translateX(50%) scale(0) translateY(20px);
+            }
+
+            .chat-window.active {
+                transform: translateX(50%) scale(1) translateY(0);
+            }
+
+            .chatbot-container {
+                bottom: 20px;
+                right: 20px;
+            }
+        }
+
+        /* Scrollbar Styling */
+        .messages-container::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .messages-container::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        .messages-container::-webkit-scrollbar-thumb {
+            background: #667eea;
+            border-radius: 2px;
+        }
+    </style>
+</head>
+<body>
+    <div class="chatbot-container">
+        <!-- Floating Button -->
+        <button class="chat-toggle" id="chatToggle">
+            <span>💬</span>
+            <div class="notification-badge" id="notificationBadge">1</div>
+        </button>
+
+        <!-- Chat Window -->
+        <div class="chat-window" id="chatWindow">
+            <!-- Header -->
+            <div class="chat-header">
+                <div class="avatar">🤖</div>
+                <div class="header-info">
+                    <h3>CZ Marketing</h3>
+                    <p><span class="status-dot"></span>En línea</p>
+                </div>
+            </div>
+
+            <!-- Body -->
+            <div class="chat-body">
+                <div class="messages-container" id="messagesContainer">
+                    <!-- Messages will be added here dynamically -->
+                </div>
+
+                <div class="input-container" id="inputContainer" style="display: none;">
+                    <input type="text" class="chat-input" id="chatInput" placeholder="Escribe tu mensaje...">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize EmailJS
+        (function() {
+            emailjs.init("KUGf5xK92dOG12Mck");
+        })();
+
+        // Chat State
+        let currentStep = 0;
+        let userData = {};
+        let isOpen = false;
+
+        // DOM Elements
+        const chatToggle = document.getElementById('chatToggle');
+        const chatWindow = document.getElementById('chatWindow');
+        const messagesContainer = document.getElementById('messagesContainer');
+        const inputContainer = document.getElementById('inputContainer');
+        const chatInput = document.getElementById('chatInput');
+        const notificationBadge = document.getElementById('notificationBadge');
+
+        // Chat Flow Steps
+        const chatSteps = [
+            {
+                id: 'welcome',
+                type: 'bot_message',
+                message: '¡Hola! 👋 Soy el asistente de CZ Marketing. Te ayudo a conectar con el mejor servicio de marketing digital.',
+                delay: 1000
+            },
+            {
+                id: 'intro',
+                type: 'bot_message', 
+                message: 'Vamos a conocerte mejor para ofrecerte exactamente lo que necesitas. ¿Cuál es tu nombre?',
+                delay: 1500
+            },
+            {
+                id: 'name',
+                type: 'user_input',
+                field: 'nombre',
+                validation: 'text'
+            },
+            {
+                id: 'email_request',
+                type: 'bot_message_dynamic',
+                message: (userData) => `Perfecto, ${userData.nombre}! 😊 ¿Cuál es tu email para enviarte información personalizada?`,
+                delay: 800
+            },
+            {
+                id: 'email',
+                type: 'user_input',
+                field: 'email',
+                validation: 'email'
+            },
+            {
+                id: 'phone_request',
+                type: 'bot_message',
+                message: '📱 ¿Podrías compartir tu número de teléfono? (Opcional)',
+                delay: 800
+            },
+            {
+                id: 'phone',
+                type: 'user_input',
+                field: 'telefono',
+                validation: 'optional',
+                optional: true
+            },
+            {
+                id: 'business_request',
+                type: 'bot_message',
+                message: '🏢 ¿Cómo se llama tu empresa o negocio?',
+                delay: 800
+            },
+            {
+                id: 'business',
+                type: 'user_input',
+                field: 'negocio',
+                validation: 'text'
+            },
+            {
+                id: 'service_request',
+                type: 'bot_message',
+                message: '🎯 ¿Qué servicio te interesa más?',
+                delay: 800
+            },
+            {
+                id: 'service',
+                type: 'options',
+                field: 'servicio',
+                options: [
+                    { value: 'redes-sociales', label: '📱 Manejo de Redes Sociales' },
+                    { value: 'diseno-logo', label: '🎨 Diseño de Logo' },
+                    { value: 'branding', label: '🚀 Branding Integral' },
+                    { value: 'multiple', label: '✨ Múltiples Servicios' },
+                    { value: 'consulta', label: '💬 Consulta General' }
+                ]
+            },
+            {
+                id: 'budget_request',
+                type: 'bot_message',
+                message: '💰 ¿Cuál es tu presupuesto aproximado para este proyecto?',
+                delay: 800
+            },
+            {
+                id: 'budget',
+                type: 'options',
+                field: 'presupuesto',
+                options: [
+                    { value: 'hasta-50k', label: 'Hasta $50.000' },
+                    { value: '50k-100k', label: '$50.000 - $100.000' },
+                    { value: '100k-200k', label: '$100.000 - $200.000' },
+                    { value: '200k-500k', label: '$200.000 - $500.000' },
+                    { value: 'mas-500k', label: 'Más de $500.000' },
+                    { value: 'a-consultar', label: 'A consultar' }
+                ]
+            },
+            {
+                id: 'message_request',
+                type: 'bot_message_dynamic',
+                message: (userData) => `Excelente, ${userData.nombre}! 📝 ¿Hay algo específico que te gustaría contarnos sobre tu proyecto o consulta?`,
+                delay: 800
+            },
+            {
+                id: 'message',
+                type: 'user_input',
+                field: 'mensaje',
+                validation: 'text',
+                placeholder: 'Cuéntanos más sobre tu proyecto...'
+            },
+            {
+                id: 'processing',
+                type: 'bot_message',
+                message: '⏳ Perfecto! Estoy procesando tu información y enviándola al equipo...',
+                delay: 800
+            },
+            {
+                id: 'success',
+                type: 'success',
+                delay: 2000
+            }
+        ];
+
+        // Event Listeners
+        chatToggle.addEventListener('click', toggleChat);
+        chatInput.addEventListener('keypress', handleInputKeypress);
+
+        // Initialize Chat
+        function initChat() {
+            setTimeout(() => {
+                executeStep(0);
+            }, 500);
+        }
+
+        // Toggle Chat
+        function toggleChat() {
+            isOpen = !isOpen;
+            chatWindow.classList.toggle('active');
+            chatToggle.classList.toggle('active');
+            
+            if (isOpen && currentStep === 0) {
+                notificationBadge.style.display = 'none';
+                initChat();
+            }
+            
+            // Update toggle icon
+            const toggleIcon = chatToggle.querySelector('span');
+            toggleIcon.textContent = isOpen ? '✕' : '💬';
+        }
+
+        // Execute Chat Step
+        function executeStep(stepIndex) {
+            if (stepIndex >= chatSteps.length) return;
+            
+            const step = chatSteps[stepIndex];
+            currentStep = stepIndex;
+            
+            setTimeout(() => {
+                switch (step.type) {
+                    case 'bot_message':
+                        addBotMessage(step.message);
+                        executeStep(stepIndex + 1);
+                        break;
+                        
+                    case 'bot_message_dynamic':
+                        addBotMessage(step.message(userData));
+                        executeStep(stepIndex + 1);
+                        break;
+                        
+                    case 'user_input':
+                        setupUserInput(step);
+                        break;
+                        
+                    case 'options':
+                        showOptions(step);
+                        break;
+                        
+                    case 'success':
+                        showSuccessMessage();
+                        break;
+                }
+            }, step.delay || 0);
+        }
+
+        // Add Bot Message
+        function addBotMessage(text) {
+            showTypingIndicator();
+            
+            setTimeout(() => {
+                hideTypingIndicator();
+                
+                const messageDiv = document.createElement('div');
+                messageDiv.className = 'message bot';
+                messageDiv.innerHTML = `
+                    <div class="message-avatar">🤖</div>
+                    <div class="message-content">${text}</div>
+                `;
+                
+                messagesContainer.appendChild(messageDiv);
+                scrollToBottom();
+            }, 1200);
+        }
+
+        // Add User Message
+        function addUserMessage(text) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message user';
+            messageDiv.innerHTML = `
+                <div class="message-content">${text}</div>
+            `;
+            
+            messagesContainer.appendChild(messageDiv);
+            scrollToBottom();
+        }
+
+        // Setup User Input
+        function setupUserInput(step) {
+            inputContainer.style.display = 'block';
+            chatInput.focus();
+            chatInput.placeholder = step.placeholder || 'Escribe tu respuesta...';
+            
+            chatInput.onkeypress = (e) => {
+                if (e.key === 'Enter') {
+                    handleUserInput(step);
+                }
+            };
+        }
+
+        // Handle User Input
+        function handleUserInput(step) {
+            const value = chatInput.value.trim();
+            
+            if (!value && !step.optional) {
+                chatInput.style.borderColor = '#ff6b6b';
+                setTimeout(() => {
+                    chatInput.style.borderColor = '#e2e8f0';
+                }, 2000);
+                return;
+            }
+            
+            // Validate input
+            if (!validateInput(value, step.validation) && !step.optional) {
+                chatInput.style.borderColor = '#ff6b6b';
+                addBotMessage('❌ Por favor, ingresa un formato válido.');
+                setTimeout(() => {
+                    chatInput.style.borderColor = '#e2e8f0';
+                }, 2000);
+                return;
+            }
+            
+            // Save data
+            userData[step.field] = value || 'No especificado';
+            
+            // Show user message
+            addUserMessage(value || 'Prefiero no especificar');
+            
+            // Clear input and hide container
+            chatInput.value = '';
+            inputContainer.style.display = 'none';
+            
+            // Continue to next step
+            executeStep(currentStep + 1);
+        }
+
+        // Show Options
+        function showOptions(step) {
+            const optionsDiv = document.createElement('div');
+            optionsDiv.className = 'message bot';
+            
+            let optionsHTML = `
+                <div class="message-avatar">🤖</div>
+                <div class="message-content">
+                    <div class="options-container">
+            `;
+            
+            step.options.forEach(option => {
+                optionsHTML += `
+                    <button class="option-btn" onclick="selectOption('${option.value}', '${option.label}', '${step.field}')">
+                        ${option.label}
+                    </button>
+                `;
+            });
+            
+            optionsHTML += `
+                    </div>
+                </div>
+            `;
+            
+            optionsDiv.innerHTML = optionsHTML;
+            messagesContainer.appendChild(optionsDiv);
+            scrollToBottom();
+        }
+
+        // Select Option
+        function selectOption(value, label, field) {
+            userData[field] = value;
+            addUserMessage(label);
+            
+            // Remove options
+            const lastMessage = messagesContainer.lastElementChild;
+            if (lastMessage.querySelector('.options-container')) {
+                lastMessage.remove();
+            }
+            
+            executeStep(currentStep + 1);
+        }
+
+        // Show Success Message
+        async function showSuccessMessage() {
+            try {
+                // Send to CRM
+                await sendToCRM();
+                
+                const successDiv = document.createElement('div');
+                successDiv.className = 'success-message';
+                successDiv.innerHTML = `
+                    <div class="success-icon">✅</div>
+                    <h3>¡Perfecto!</h3>
+                    <p>Tu información ha sido enviada correctamente. El equipo de CZ Marketing te contactará muy pronto.<br><br>¡Gracias por confiar en nosotros! 🚀</p>
+                `;
+                
+                messagesContainer.innerHTML = '';
+                messagesContainer.appendChild(successDiv);
+                
+            } catch (error) {
+                console.error('Error:', error);
+                addBotMessage('❌ Hubo un error al enviar tu información. Por favor, inténtalo de nuevo o contáctanos directamente.');
+            }
+        }
+
+        // Send to CRM
+        async function sendToCRM() {
+            // Prepare data for EmailJS
+            const emailData = {
+                to_name: 'CZ Marketing Team',
+                from_name: userData.nombre,
+                from_email: userData.email,
+                telefono: userData.telefono,
+                empresa: userData.negocio,
+                servicio_label: getServiceLabel(userData.servicio),
+                presupuesto_label: getBudgetLabel(userData.presupuesto),
+                mensaje: userData.mensaje,
+                fecha: new Date().toLocaleString('es-ES')
+            };
+            
+            // Send email
+            await emailjs.send('service_kahf2ie', 'marketing_cliente_celeste', emailData);
+            
+            // Prepare data for Google Sheets
+            const sheetData = {
+                nombre: userData.nombre,
+                email: userData.email,
+                telefono: userData.telefono,
+                negocio: userData.negocio,
+                presupuesto: userData.presupuesto,
+                mensaje: userData.mensaje,
+                variables: userData
+            };
+            
+            // Send to Google Sheets
+            await sendToGoogleSheets(sheetData);
+        }
+
+        // Send to Google Sheets
+        async function sendToGoogleSheets(data) {
+            const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxULN5f6-dSAMfdJaBz3-HjGrJGKUyDiVOzyzDAGTQuo7VR89x5XgnFLcqA1-AMo8Ay0A/exec';
+            
+            const response = await fetch(GOOGLE_SCRIPT_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    variables: data
+                })
+            });
+            
+            if (!response.ok) {
+                throw new Error('Error al enviar a Google Sheets');
+            }
+            
+            return response.json();
+        }
+
+        // Utility Functions
+        function validateInput(value, type) {
+            switch (type) {
+                case 'email':
+                    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+                case 'text':
+                    return value.length >= 2;
+                case 'optional':
+                    return true;
+                default:
+                    return true;
+            }
+        }
+
+        function getServiceLabel(value) {
+            const services = {
+                'redes-sociales': 'Manejo de Redes Sociales',
+                'diseno-logo': 'Diseño de Logo',
+                'branding': 'Branding Integral',
+                'multiple': 'Múltiples Servicios',
+                'consulta': 'Consulta General'
+            };
+            return services[value] || value;
+        }
+
+        function getBudgetLabel(value) {
+            const budgets = {
+                'hasta-50k': 'Hasta $50.000',
+                '50k-100k': '$50.000 - $100.000',
+                '100k-200k': '$100.000 - $200.000',
+                '200k-500k': '$200.000 - $500.000',
+                'mas-500k': 'Más de $500.000',
+                'a-consultar': 'A consultar'
+            };
+            return budgets[value] || value;
+        }
+
+        function showTypingIndicator() {
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'message bot typing-indicator';
+            typingDiv.innerHTML = `
+                <div class="message-avatar">🤖</div>
+                <div class="message-content">
+                    <div class="typing-dots">
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                    </div>
+                </div>
+            `;
+            
+            messagesContainer.appendChild(typingDiv);
+            scrollToBottom();
+        }
+
+        function hideTypingIndicator() {
+            const typingIndicator = messagesContainer.querySelector('.typing-indicator');
+            if (typingIndicator) {
+                typingIndicator.remove();
+            }
+        }
+
+        function handleInputKeypress(e) {
+            if (e.key === 'Enter') {
+                const currentStepData = chatSteps[currentStep];
+                if (currentStepData && currentStepData.type === 'user_input') {
+                    handleUserInput(currentStepData);
+                }
+            }
+        }
+
+        function scrollToBottom() {
+            setTimeout(() => {
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            }, 100);
+        }
+
+        // Initialize on load
+        window.addEventListener('load', () => {
+            // Show notification badge initially
+            setTimeout(() => {
+                notificationBadge.style.display = 'flex';
+            }, 3000);
+        });
+    </script>
+</body>
+</html>
