@@ -435,24 +435,27 @@
         }
 
         .chat-window {
-            position: absolute;
-            bottom: 80px;
-            right: 0;
-            width: 380px;
-            height: 550px;
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            transform: scale(0) translateY(20px);
-            transform-origin: bottom right;
-            transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-            opacity: 0;
-            overflow: hidden;
+            position: absolute !important;
+            bottom: 80px !important;
+            right: 0 !important;
+            width: 380px !important;
+            height: 550px !important;
+            background: white !important;
+            border-radius: 20px !important;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3) !important;
+            transform: scale(0) translateY(20px) !important;
+            transform-origin: bottom right !important;
+            transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55) !important;
+            opacity: 0 !important;
+            overflow: hidden !important;
+            visibility: hidden !important;
+            z-index: 10001 !important;
         }
 
         .chat-window.active {
-            transform: scale(1) translateY(0);
-            opacity: 1;
+            transform: scale(1) translateY(0) !important;
+            opacity: 1 !important;
+            visibility: visible !important;
         }
 
         .chat-header {
@@ -1618,7 +1621,6 @@
 
         }); // End of DOMContentLoaded
 
-        // Función global para el chatbot como backup
         window.toggleChatManual = function() {
             console.log('🚀 CHATBOT: Función manual ejecutada');
             
@@ -1632,10 +1634,29 @@
             }
             
             console.log('✅ Elementos encontrados, alternando chat...');
+            console.log('Classes antes:', chatWindow.className);
             
             // Toggle window
             chatWindow.classList.toggle('active');
             chatToggle.classList.toggle('active');
+            
+            console.log('Classes después:', chatWindow.className);
+            
+            // Force style check
+            const isActive = chatWindow.classList.contains('active');
+            console.log('¿Tiene clase active?', isActive);
+            
+            if (isActive) {
+                // Force show with inline styles as backup
+                chatWindow.style.transform = 'scale(1) translateY(0)';
+                chatWindow.style.opacity = '1';
+                chatWindow.style.visibility = 'visible';
+                console.log('🔧 Estilos inline aplicados como backup');
+            } else {
+                chatWindow.style.transform = 'scale(0) translateY(20px)';
+                chatWindow.style.opacity = '0';
+                chatWindow.style.visibility = 'hidden';
+            }
             
             // Update icon
             const toggleIcon = chatToggle.querySelector('.chat-toggle-icon');
