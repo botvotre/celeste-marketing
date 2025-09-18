@@ -920,7 +920,9 @@
     <script>
         // Initialize EmailJS
         (function() {
+            console.log('🔧 Inicializando EmailJS...');
             emailjs.init("KUGf5xK92dOG12Mck");
+            console.log('✅ EmailJS inicializado correctamente');
         })();
 
         // Navbar scroll effect
@@ -957,8 +959,24 @@
             };
             
             try {
+                console.log('📧 ENVIANDO EMAIL - Datos:', {
+                    service: 'service_kahf2ie',
+                    template: 'marketing_cliente_celeste',
+                    data: {
+                        to_name: 'CZ Marketing Team',
+                        from_name: formData.nombre,
+                        from_email: formData.email,
+                        telefono: formData.telefono || 'No especificado',
+                        empresa: formData.empresa || 'No especificado',
+                        servicio_label: getServiceLabel(formData.servicio),
+                        presupuesto_label: getBudgetLabel(formData.presupuesto),
+                        mensaje: formData.mensaje,
+                        fecha: formData.fecha
+                    }
+                });
+
                 // Send email via EmailJS
-                await emailjs.send('service_kahf2ie', 'marketing_cliente_celeste', {
+                const emailResult = await emailjs.send('service_kahf2ie', 'marketing_cliente_celeste', {
                     to_name: 'CZ Marketing Team',
                     from_name: formData.nombre,
                     from_email: formData.email,
@@ -970,8 +988,12 @@
                     fecha: formData.fecha
                 });
                 
+                console.log('✅ Email enviado correctamente:', emailResult);
+                
                 // Send to Google Sheets
-                await sendToSheets(formData);
+                console.log('📊 ENVIANDO A GOOGLE SHEETS...');
+                const sheetResult = await sendToSheets(formData);
+                console.log('✅ Datos enviados a Google Sheets:', sheetResult);
                 
                 // Show success message
                 showMessage('¡Mensaje enviado correctamente! Te contactaremos pronto.', 'success');
@@ -1069,6 +1091,8 @@
 
         // Wait for DOM to be fully loaded
         document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM loaded - Inicializando chatbot...');
+            
             // Chatbot functionality
             let chatCurrentStep = 0;
             let chatUserData = {};
@@ -1081,6 +1105,15 @@
             const chatInputContainer = document.getElementById('chatInputContainer');
             const chatInput = document.getElementById('chatInput');
             const notificationBadge = document.getElementById('notificationBadge');
+
+            console.log('Elementos del chatbot:', {
+                chatToggle: !!chatToggle,
+                chatWindow: !!chatWindow,
+                chatMessages: !!chatMessages,
+                chatInputContainer: !!chatInputContainer,
+                chatInput: !!chatInput,
+                notificationBadge: !!notificationBadge
+            });
 
             // Chat Flow Steps
             const chatSteps = [
@@ -1204,7 +1237,11 @@
 
             // Event Listeners for chatbot
             if (chatToggle) {
+                console.log('Agregando event listener al botón chatbot...');
                 chatToggle.addEventListener('click', toggleChat);
+                console.log('Event listener agregado correctamente');
+            } else {
+                console.error('ERROR: No se encontró el elemento chatToggle');
             }
             
             if (chatInput) {
@@ -1220,18 +1257,26 @@
 
             // Toggle Chat
             function toggleChat() {
-                console.log('Toggle chat clicked!');
+                console.log('🚀 CHATBOT: Toggle chat clicked!');
+                console.log('Estado actual - chatIsOpen:', chatIsOpen);
+                
                 chatIsOpen = !chatIsOpen;
+                console.log('Nuevo estado - chatIsOpen:', chatIsOpen);
                 
                 if (chatWindow) {
                     chatWindow.classList.toggle('active');
+                    console.log('Chat window classes:', chatWindow.className);
+                } else {
+                    console.error('ERROR: chatWindow no encontrado');
                 }
                 
                 if (chatToggle) {
                     chatToggle.classList.toggle('active');
+                    console.log('Chat toggle classes:', chatToggle.className);
                 }
                 
                 if (chatIsOpen && chatCurrentStep === 0) {
+                    console.log('Iniciando chat por primera vez...');
                     if (notificationBadge) {
                         notificationBadge.style.display = 'none';
                     }
@@ -1242,6 +1287,9 @@
                 const toggleIcon = chatToggle.querySelector('.chat-toggle-icon');
                 if (toggleIcon) {
                     toggleIcon.textContent = chatIsOpen ? '✕' : '💬';
+                    console.log('Icono actualizado a:', toggleIcon.textContent);
+                } else {
+                    console.error('ERROR: toggle icon no encontrado');
                 }
             }
 
