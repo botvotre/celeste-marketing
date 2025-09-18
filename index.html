@@ -6,7 +6,7 @@
     <title>CZ Marketing - Impulsa tu Marca</title>
     
     <!-- EmailJS SDK -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/emailjs/3.11.0/email.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
     
     <style>
         * {
@@ -884,7 +884,7 @@
 
     <!-- Chatbot -->
     <div class="chatbot-container">
-        <button class="chat-toggle" id="chatToggle">
+        <button class="chat-toggle" id="chatToggle" onclick="window.toggleChatManual()">
             <span class="chat-toggle-icon">💬</span>
             <div class="notification-badge" id="notificationBadge">1</div>
         </button>
@@ -919,11 +919,28 @@
 
     <script>
         // Initialize EmailJS
-        (function() {
-            console.log('🔧 Inicializando EmailJS...');
-            emailjs.init("KUGf5xK92dOG12Mck");
-            console.log('✅ EmailJS inicializado correctamente');
-        })();
+        window.addEventListener('load', function() {
+            console.log('🔧 Verificando EmailJS...');
+            
+            if (typeof emailjs !== 'undefined') {
+                console.log('✅ EmailJS disponible, inicializando...');
+                emailjs.init("KUGf5xK92dOG12Mck");
+                console.log('✅ EmailJS inicializado correctamente');
+            } else {
+                console.error('❌ ERROR: EmailJS no está disponible');
+                console.log('Intentando cargar EmailJS manualmente...');
+                
+                // Fallback: cargar EmailJS manualmente
+                const script = document.createElement('script');
+                script.src = 'https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js';
+                script.onload = function() {
+                    console.log('✅ EmailJS cargado manualmente');
+                    emailjs.init("KUGf5xK92dOG12Mck");
+                    console.log('✅ EmailJS inicializado correctamente');
+                };
+                document.head.appendChild(script);
+            }
+        });
 
         // Navbar scroll effect
         window.addEventListener('scroll', function() {
@@ -1600,6 +1617,53 @@
             }, 3000);
 
         }); // End of DOMContentLoaded
+
+        // Función global para el chatbot como backup
+        window.toggleChatManual = function() {
+            console.log('🚀 CHATBOT: Función manual ejecutada');
+            
+            const chatWindow = document.getElementById('chatWindow');
+            const chatToggle = document.getElementById('chatToggle');
+            const notificationBadge = document.getElementById('notificationBadge');
+            
+            if (!chatWindow) {
+                console.error('❌ ERROR: chatWindow no encontrado');
+                return;
+            }
+            
+            console.log('✅ Elementos encontrados, alternando chat...');
+            
+            // Toggle window
+            chatWindow.classList.toggle('active');
+            chatToggle.classList.toggle('active');
+            
+            // Update icon
+            const toggleIcon = chatToggle.querySelector('.chat-toggle-icon');
+            if (toggleIcon) {
+                const isOpen = chatWindow.classList.contains('active');
+                toggleIcon.textContent = isOpen ? '✕' : '💬';
+                console.log('Chat abierto:', isOpen);
+                
+                if (isOpen && notificationBadge) {
+                    notificationBadge.style.display = 'none';
+                    
+                    // Inicializar chat
+                    setTimeout(() => {
+                        const chatMessages = document.getElementById('chatMessages');
+                        if (chatMessages) {
+                            const welcomeMessage = `
+                                <div class="chat-message bot">
+                                    <div class="message-avatar">🤖</div>
+                                    <div class="message-content">¡Hola! 👋 Soy el asistente de CZ Marketing. Te ayudo a conectar con el mejor servicio de marketing digital.</div>
+                                </div>
+                            `;
+                            chatMessages.innerHTML = welcomeMessage;
+                            console.log('✅ Mensaje de bienvenida agregado');
+                        }
+                    }, 500);
+                }
+            }
+        };
 
         // Smooth scroll for navigation links
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
