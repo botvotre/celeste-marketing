@@ -981,7 +981,7 @@
             try {
                 console.log('📧 ENVIANDO EMAIL - Datos:', {
                     service: 'service_kahf2ie',
-                    template: 'marketing_cliente_celeste',
+                    template: 'marketing celeste',
                     data: {
                         to_name: 'CZ Marketing Team',
                         from_name: formData.nombre,
@@ -996,7 +996,7 @@
                 });
 
                 // Send email via EmailJS
-                const emailResult = await emailjs.send('service_kahf2ie', 'marketing_cliente_celeste', {
+                const emailResult = await emailjs.send('service_kahf2ie', 'template_default', {
                     to_name: 'CZ Marketing Team',
                     from_name: formData.nombre,
                     from_email: formData.email,
@@ -1527,7 +1527,7 @@
                 };
                 
                 // Send email
-                await emailjs.send('service_kahf2ie', 'marketing_cliente_celeste', emailData);
+                await emailjs.send('service_kahf2ie', 'marketing celeste', emailData);
                 
                 // Prepare data for Google Sheets
                 const sheetData = {
@@ -1648,14 +1648,13 @@
             
             if (isActive) {
                 // Force show with inline styles as backup
-                chatWindow.style.transform = 'scale(1) translateY(0)';
-                chatWindow.style.opacity = '1';
-                chatWindow.style.visibility = 'visible';
+                chatWindow.style.cssText = 'transform: scale(1) translateY(0) !important; opacity: 1 !important; visibility: visible !important; display: block !important;';
                 console.log('🔧 Estilos inline aplicados como backup');
+                console.log('🔍 Estilo calculado:', window.getComputedStyle(chatWindow).transform);
+                console.log('🔍 Opacity calculada:', window.getComputedStyle(chatWindow).opacity);
+                console.log('🔍 Visibility calculada:', window.getComputedStyle(chatWindow).visibility);
             } else {
-                chatWindow.style.transform = 'scale(0) translateY(20px)';
-                chatWindow.style.opacity = '0';
-                chatWindow.style.visibility = 'hidden';
+                chatWindow.style.cssText = 'transform: scale(0) translateY(20px) !important; opacity: 0 !important; visibility: hidden !important;';
             }
             
             // Update icon
