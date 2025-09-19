@@ -996,7 +996,7 @@
                 });
 
                 // Send email via EmailJS
-                const emailResult = await emailjs.send('service_kahf2ie', 'template_default', {
+                const emailResult = await emailjs.send('service_kahf2ie', 'marketing celeste', {
                     to_name: 'CZ Marketing Team',
                     from_name: formData.nombre,
                     from_email: formData.email,
@@ -1514,6 +1514,9 @@
 
             // Send to CRM
             async function sendChatToCRM() {
+                console.log('🚀 INICIANDO envío a CRM...');
+                console.log('📊 Datos del usuario:', chatUserData);
+                
                 // Prepare data for EmailJS
                 const emailData = {
                     to_name: 'CZ Marketing Team',
@@ -1527,30 +1530,108 @@
                     fecha: new Date().toLocaleString('es-ES')
                 };
                 
+                console.log('📧 Datos para EmailJS:', emailData);
+                
                 // Send email
-                await emailjs.send('service_kahf2ie', 'marketing_cliente_celeste', emailData);
-                
-                // Prepare data for Google Sheets
-                const sheetData = {
-                    variables: chatUserData
-                };
-                
-                // Send to Google Sheets
-                const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxULN5f6-dSAMfdJaBz3-HjGrJGKUyDiVOzyzDAGTQuo7VR89x5XgnFLcqA1-AMo8Ay0A/exec';
-                
-                const response = await fetch(GOOGLE_SCRIPT_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(sheetData)
-                });
-                
-                if (!response.ok) {
-                    throw new Error('Error al enviar a Google Sheets');
+                try {
+                    console.log('📤 Enviando email...');
+                    await emailjs.send('service_kahf2ie', 'marketing celeste', emailData);
+                    console.log('✅ Email enviado correctamente');
+                } catch (emailError) {
+                    console.error('❌ Error en EmailJS:', emailError);
                 }
                 
-                return response.json();
+                // Prepare data for Google Sheets - MÉTODO ALTERNATIVO
+                console.log('📊 Preparando datos para Google Sheets...');
+                
+                // Método 1: Usando fetch con estructura correcta
+                const sheetData1 = {
+                    from_name: chatUserData.nombre,
+                    from_email: chatUserData.email,
+                    phone: chatUserData.telefono || 'No especificado',
+                    business_type: chatUserData.negocio || 'No especificado',
+                    budget: getBudgetLabel(chatUserData.presupuesto),
+                    message: `Servicio: ${getServiceLabel(chatUserData.servicio)} - ${chatUserData.mensaje}`,
+                    source: 'Chatbot'
+                };
+                
+                // Método 2: Usando estructura con variables (backup)
+                const sheetData2 = {
+                    variables: {
+                        nombre: chatUserData.nombre,
+                        email: chatUserData.email,
+                        telefono: chatUserData.telefono || 'No especificado',
+                        negocio: chatUserData.negocio || 'No especificado',
+                        presupuesto: chatUserData.presupuesto,
+                        mensaje: chatUserData.mensaje,
+                        servicio: chatUserData.servicio
+                    }
+                };
+                
+                console.log('📊 Datos método 1 (landing format):', sheetData1);
+                console.log('📊 Datos método 2 (variables format):', sheetData2);
+                
+                const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxULN5f6-dSAMfdJaBz3-HjGrJGKUyDiVOzyzDAGTQuo7VR89x5XgnFLcqA1-AMo8Ay0A/exec';
+                
+                // Intentar método 1 primero
+                try {
+                    console.log('🌐 Enviando a Google Sheets (método 1)...');
+                    const response1 = await fetch(GOOGLE_SCRIPT_URL, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(sheetData1),
+                        mode: 'no-cors' // Intentar evitar CORS
+                    });
+                    
+                    console.log('✅ Respuesta método 1:', response1);
+                    return { success: true, method: 1 };
+                    
+                } catch (error1) {
+                    console.error('❌ Error método 1:', error1);
+                    
+                    // Intentar método 2
+                    try {
+                        console.log('🌐 Enviando a Google Sheets (método 2)...');
+                        const response2 = await fetch(GOOGLE_SCRIPT_URL, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify(sheetData2),
+                            mode: 'no-cors'
+                        });
+                        
+                        console.log('✅ Respuesta método 2:', response2);
+                        return { success: true, method: 2 };
+                        
+                    } catch (error2) {
+                        console.error('❌ Error método 2:', error2);
+                        
+                        // Método 3: GET request como último recurso
+                        try {
+                            console.log('🌐 Intentando método 3 (GET)...');
+                            const params = new URLSearchParams({
+                                nombre: chatUserData.nombre,
+                                email: chatUserData.email,
+                                telefono: chatUserData.telefono || '',
+                                negocio: chatUserData.negocio || '',
+                                presupuesto: chatUserData.presupuesto || '',
+                                mensaje: chatUserData.mensaje || '',
+                                source: 'Chatbot'
+                            });
+                            
+                            const response3 = await fetch(`${GOOGLE_SCRIPT_URL}?${params}`);
+                            console.log('✅ Respuesta método 3:', response3);
+                            return { success: true, method: 3 };
+                            
+                        } catch (error3) {
+                            console.error('❌ Error método 3:', error3);
+                            throw new Error('Todos los métodos fallaron');
+                        }
+                    }
+                }
             }
 
             // Utility Functions for chatbot
