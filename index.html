@@ -981,7 +981,7 @@
             try {
                 console.log('📧 ENVIANDO EMAIL - Datos:', {
                     service: 'service_kahf2ie',
-                    template: 'marketing celeste',
+                    template: 'marketing_cliente_celeste',
                     data: {
                         to_name: 'CZ Marketing Team',
                         from_name: formData.nombre,
@@ -1270,6 +1270,7 @@
 
             // Initialize Chat
             function initChat() {
+                if (chatCurrentStep > 0) return; // Evitar inicializar múltiples veces
                 setTimeout(() => {
                     executeChatStep(0);
                 }, 500);
@@ -1527,7 +1528,7 @@
                 };
                 
                 // Send email
-                await emailjs.send('service_kahf2ie', 'marketing celeste', emailData);
+                await emailjs.send('service_kahf2ie', 'marketing_cliente_celeste', emailData);
                 
                 // Prepare data for Google Sheets
                 const sheetData = {
@@ -1667,10 +1668,10 @@
                 if (isOpen && notificationBadge) {
                     notificationBadge.style.display = 'none';
                     
-                    // Inicializar chat
+                    // Solo inicializar si no hay mensajes
                     setTimeout(() => {
                         const chatMessages = document.getElementById('chatMessages');
-                        if (chatMessages) {
+                        if (chatMessages && chatMessages.innerHTML.trim() === '') {
                             const welcomeMessage = `
                                 <div class="chat-message bot">
                                     <div class="message-avatar">🤖</div>
